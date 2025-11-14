@@ -1,4 +1,4 @@
-name: Setup Rust Action Environment
+name: Espresso Setup Rust Action Environment
 
 description: Installs dependencies to run Rust jobs.
 

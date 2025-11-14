@@ -1,4 +1,4 @@
-name: Rust CI
+name: Espresso Rust Tests CI
 
 on:
   push:
@@ -210,7 +210,7 @@ jobs:
         run: cargo generate-lockfile
       - name: cargo llvm-cov
         run: |
-           just llvm-cov-tests && mv ./target/nextest/ci/junit.xml ./junit.xml
+          just llvm-cov-tests && mv ./target/nextest/ci/junit.xml ./junit.xml
       - name: Record Rust version
         run: echo "RUST=$(rustc --version)" >> "$GITHUB_ENV"
       - name: Upload coverage to codecov.io
@@ -254,5 +254,3 @@ jobs:
       - name: Lint features
         run: |
           zepter
-
-
