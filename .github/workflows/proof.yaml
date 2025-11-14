@@ -23,8 +23,8 @@ jobs:
       - name: Checkout sources
         uses: actions/checkout@v5
         with:
-          submodules: recursive   # or 'true' if you don't need nested subs
-          fetch-depth: 1          # optional, but nice for versioning
+          submodules: recursive # or 'true' if you don't need nested subs
+          fetch-depth: 1 # optional, but nice for versioning
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
         with:
@@ -49,15 +49,16 @@ jobs:
           source <(cargo llvm-cov show-env --export-prefix)
           just "action-tests-${{ matrix.kind }}"
           cargo llvm-cov report --lcov --output-path actions_cov.lcov
-      - name: Upload coverage to codecov.io
-        uses: codecov/codecov-action@v5
-        with:
-          fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
-          env_vars: OS,RUST
-          files: actions_cov.lcov
-          flags: proof
-          verbose: true
+      # we dont have a subscription of codecov.io
+      # - name: Upload coverage to codecov.io
+      #   uses: codecov/codecov-action@v5
+      #   with:
+      #     fail_ci_if_error: true
+      #     token: ${{ secrets.CODECOV_TOKEN }}
+      #     env_vars: OS,RUST
+      #     files: actions_cov.lcov
+      #     flags: proof
+      #     verbose: true
 
   host-client-offline-runs:
     name: FPP e2e - ${{ matrix.target}} | ${{ matrix.name }}
