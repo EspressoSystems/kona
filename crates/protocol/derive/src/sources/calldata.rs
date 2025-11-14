@@ -324,7 +324,7 @@ mod tests {
         assert!(source.open);
     }
 
-    // Test if the receipt status false causes the calldata to be ignored.
+    // Test if the receipt status true causes the calldata to be processed.
     #[tokio::test]
     async fn test_non_empty_calldata_if_receipt_status_true() {
         let batch_inbox_address = address!("0123456789012345678901234567890123456789");
@@ -348,6 +348,7 @@ mod tests {
         assert!(source.open);
     }
 
+    // Test if the receipt status false causes the calldata to be ignored.
     #[tokio::test]
     async fn test_empty_calldata_if_receipt_status_false() {
         let batch_inbox_address = address!("0123456789012345678901234567890123456789");

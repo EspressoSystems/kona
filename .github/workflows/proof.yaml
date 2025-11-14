@@ -144,12 +144,14 @@ jobs:
             $L2_CHAIN_ID
 
           cargo llvm-cov report --lcov --output-path client_host_cov.lcov
-      - name: Upload coverage to codecov.io
-        uses: codecov/codecov-action@v5
-        with:
-          fail_ci_if_error: true
-          token: ${{ secrets.CODECOV_TOKEN }}
-          env_vars: OS,RUST
-          files: client_host_cov.lcov
-          flags: proof
-          verbose: true
+
+      # We dont have codecov enabled
+      # - name: Upload coverage to codecov.io
+      #   uses: codecov/codecov-action@v5
+      #   with:
+      #     fail_ci_if_error: true
+      #     token: ${{ secrets.CODECOV_TOKEN }}
+      #     env_vars: OS,RUST
+      #     files: client_host_cov.lcov
+      #     flags: proof
+      #     verbose: true
