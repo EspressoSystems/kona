@@ -44,7 +44,11 @@ impl<CP: ChainProvider + Send> CalldataSource<CP> {
         let (_, txs) =
             self.chain_provider.block_info_and_transactions_by_hash(block_ref.hash).await?;
 
-        let receipts: Vec<Receipt> = self.chain_provider.receipts_by_hash(block_ref.hash).await?;
+        let mut receipts: Vec<Receipt> = Vec::new();
+        // only fetch receipts if there are transactions
+        if !txs.is_empty() {
+            receipts = self.chain_provider.receipts_by_hash(block_ref.hash).await?;
+        }
 
         self.calldata = txs
             .iter()
@@ -54,7 +58,7 @@ impl<CP: ChainProvider + Send> CalldataSource<CP> {
                 // that means it cant be valid batch inbox tx.
                 // TODO: In future, we should add a conditional check that this should only be done
                 // for txs after Espresso migration.
-                let receipt = receipts.get(index)?;
+                let receipt: &Receipt = receipts.get(index)?;
                 if !receipt.status() {
                     return None;
                 }
@@ -199,7 +203,13 @@ mod tests {
         let mut source = default_test_calldata_source();
         let block_info = BlockInfo::default();
         let tx = test_legacy_tx(batch_inbox_address);
-        source.chain_provider.insert_block_with_transactions(0, block_info, vec![tx]);
+        source.chain_provider.insert_block_with_transactions(0, block_info, vec![tx.clone()]);
+        let receipt = Receipt {
+            cumulative_gas_used: 42000,
+            status: Eip658Value::Eip658(true),
+            ..Default::default()
+        };
+        source.chain_provider.insert_receipts(*tx.hash(), vec![receipt]);
         assert!(!source.open); // Source is not open by default.
         assert!(source.load_calldata(&BlockInfo::default(), Address::ZERO).await.is_ok());
         assert!(source.calldata.is_empty());
@@ -213,7 +223,13 @@ mod tests {
         source.batch_inbox_address = batch_inbox_address;
         let block_info = BlockInfo::default();
         let tx = test_legacy_tx(batch_inbox_address);
-        source.chain_provider.insert_block_with_transactions(0, block_info, vec![tx]);
+        source.chain_provider.insert_block_with_transactions(0, block_info, vec![tx.clone()]);
+        let receipt = Receipt {
+            cumulative_gas_used: 42000,
+            status: Eip658Value::Eip658(true),
+            ..Default::default()
+        };
+        source.chain_provider.insert_receipts(*tx.hash(), vec![receipt]);
         assert!(!source.open); // Source is not open by default.
         assert!(source.load_calldata(&BlockInfo::default(), Address::ZERO).await.is_ok());
         assert!(source.calldata.is_empty());
@@ -228,6 +244,12 @@ mod tests {
         let tx = test_legacy_tx(batch_inbox_address);
         let block_info = BlockInfo::default();
         source.chain_provider.insert_block_with_transactions(0, block_info, vec![tx.clone()]);
+        let receipt = Receipt {
+            cumulative_gas_used: 42000,
+            status: Eip658Value::Eip658(true),
+            ..Default::default()
+        };
+        source.chain_provider.insert_receipts(*tx.hash(), vec![receipt]);
         assert!(!source.open); // Source is not open by default.
         assert!(
             source.load_calldata(&BlockInfo::default(), tx.recover_signer().unwrap()).await.is_ok()
@@ -244,6 +266,12 @@ mod tests {
         let tx = test_eip2930_tx(batch_inbox_address);
         let block_info = BlockInfo::default();
         source.chain_provider.insert_block_with_transactions(0, block_info, vec![tx.clone()]);
+        let receipt = Receipt {
+            cumulative_gas_used: 42000,
+            status: Eip658Value::Eip658(true),
+            ..Default::default()
+        };
+        source.chain_provider.insert_receipts(*tx.hash(), vec![receipt]);
         assert!(!source.open); // Source is not open by default.
         assert!(
             source.load_calldata(&BlockInfo::default(), tx.recover_signer().unwrap()).await.is_ok()
@@ -260,6 +288,12 @@ mod tests {
         let tx = test_blob_tx(batch_inbox_address);
         let block_info = BlockInfo::default();
         source.chain_provider.insert_block_with_transactions(0, block_info, vec![tx.clone()]);
+        let receipt = Receipt {
+            cumulative_gas_used: 42000,
+            status: Eip658Value::Eip658(true),
+            ..Default::default()
+        };
+        source.chain_provider.insert_receipts(*tx.hash(), vec![receipt]);
         assert!(!source.open); // Source is not open by default.
         assert!(
             source.load_calldata(&BlockInfo::default(), tx.recover_signer().unwrap()).await.is_ok()
@@ -276,6 +310,12 @@ mod tests {
         let tx = test_eip7702_tx(batch_inbox_address);
         let block_info = BlockInfo::default();
         source.chain_provider.insert_block_with_transactions(0, block_info, vec![tx.clone()]);
+        let receipt = Receipt {
+            cumulative_gas_used: 42000,
+            status: Eip658Value::Eip658(true),
+            ..Default::default()
+        };
+        source.chain_provider.insert_receipts(*tx.hash(), vec![receipt]);
         assert!(!source.open); // Source is not open by default.
         assert!(
             source.load_calldata(&BlockInfo::default(), tx.recover_signer().unwrap()).await.is_ok()
@@ -293,13 +333,12 @@ mod tests {
         let tx = test_eip2930_tx(batch_inbox_address);
         let block_info = BlockInfo::default();
         source.chain_provider.insert_block_with_transactions(0, block_info, vec![tx.clone()]);
-        // Insert a receipt with status false.
+        // Insert a receipt with status true.
         let receipt = Receipt {
             cumulative_gas_used: 42000,
             status: Eip658Value::Eip658(true),
             ..Default::default()
         };
-        source.chain_provider.insert_block_with_transactions(0, block_info, vec![tx.clone()]);
         source.chain_provider.insert_receipts(*tx.hash(), vec![receipt]);
         assert!(!source.open); // Source is not open by default.
         assert!(
@@ -309,7 +348,6 @@ mod tests {
         assert!(source.open);
     }
 
-    // Test if the receipt status false causes the calldata to be ignored.
     #[tokio::test]
     async fn test_empty_calldata_if_receipt_status_false() {
         let batch_inbox_address = address!("0123456789012345678901234567890123456789");
@@ -324,7 +362,6 @@ mod tests {
             status: Eip658Value::Eip658(false),
             ..Default::default()
         };
-        source.chain_provider.insert_block_with_transactions(0, block_info, vec![tx.clone()]);
         source.chain_provider.insert_receipts(*tx.hash(), vec![receipt]);
         assert!(!source.open); // Source is not open by default.
         assert!(
